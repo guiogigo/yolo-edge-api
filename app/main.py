@@ -1,8 +1,12 @@
 import asyncio
 import base64
 import io
+
+# Adicionar após os imports existentes em app/main.py
+import json
 import subprocess
 import time
+import uuid
 
 import cv2
 import httpx
@@ -20,12 +24,6 @@ from schemas import (
     PredictRequest,
     PredictResponse,
 )
-
-# Adicionar após os imports existentes em app/main.py
-
-
-import json
-import uuid
 
 
 def log_event(event: str, level: str = "INFO", **kwargs):
