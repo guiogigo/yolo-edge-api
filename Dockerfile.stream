@@ -1,0 +1,47 @@
+# Dockerfile.stream - Para o serviço de streaming MJPEG
+# Usa Debian Bookworm (estável) em vez de Trixie para compatibilidade com rpicam-apps
+FROM arm64v8/python:3.11-slim-bookworm
+
+# Instala dependências do sistema e rpicam-apps-lite (sem erro de GPG)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    curl \
+    gnupg \
+    ca-certificates \
+    && curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+        | gpg --dearmor -o /usr/share/keyrings/raspberrypi-archive-keyring.gpg \
+    && echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] https://archive.raspberrypi.com/debian/ bookworm main" \
+        > /etc/apt/sources.list.d/raspi.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        rpicam-apps-lite \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copia requirements primeiro
+COPY app/requirements.txt .
+
+# Instala dependências Python (PyTorch CPU-only)
+RUN pip install --no-cache-dir \
+    torch==2.0.0 \
+    torchvision==0.15.0 \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# Instala as outras dependências (incluindo Flask)
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir flask
+
+# Copia o código da aplicação e do stream
+COPY app/ .
+COPY stream/ ./stream/
+
+# Cria diretório para modelos
+RUN mkdir -p /app/models
+
+EXPOSE 5000
+
+# Comando padrão (pode ser sobrescrito no docker-compose)
+CMD ["python3", "stream/mjpeg_server.py", "--device", "0", "--port", "5000", "--infer-every", "3"]

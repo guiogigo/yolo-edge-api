@@ -1,28 +1,34 @@
-FROM python:3.11-slim-bookworm
+# Dockerfile.api - Otimizado para Raspberry Pi 5 (ARM64, sem GPU)
+FROM arm64v8/python:3.11-slim
 
-
-# Instala dependências do sistema + repositório oficial da Raspberry Pi Foundation
+# Instala dependências do sistema (sem rpicam-apps-lite para reduzir tamanho)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libgl1 libglib2.0-0 libgomp1 curl gnupg ca-certificates && \
-    curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
-        | gpg --dearmor -o /usr/share/keyrings/raspberrypi-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] https://archive.raspberrypi.com/debian/ bookworm main" \
-        > /etc/apt/sources.list.d/raspi.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends rpicam-apps-lite && \
-    rm -rf /var/lib/apt/lists/*
-
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-
+# Copia requirements primeiro (para cache)
 COPY app/requirements.txt .
+
+# Instala PyTorch CPU-only (sem CUDA) para ARM64
+RUN pip install --no-cache-dir \
+    torch==2.0.0 \
+    torchvision==0.15.0 \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# Instala as outras dependências
 RUN pip install --no-cache-dir -r requirements.txt
 
-
+# Copia o código da aplicação
 COPY app/ .
-COPY models/ /app/models/
+
+# Cria diretório para modelos
+RUN mkdir -p /app/models
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
