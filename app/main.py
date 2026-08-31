@@ -6,8 +6,6 @@ import base64
 import io
 import time
 import subprocess
-from pathlib import Path
-from fastapi import FastAPI, HTTPException, Response, Query
 from PIL import Image
 import numpy as np
 import httpx
