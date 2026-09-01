@@ -20,3 +20,11 @@ images/
 
 # Variáveis de ambiente locais
 .env
+
+# Atividade
+cat >> .gitignore << 'EOF'
+preprocessing/outputs/
+__pycache__/
+runs/
+EOF
+
