@@ -178,6 +178,27 @@ jobs:
       - name: Recuperar dataset via DVC
         run: dvc pull dataset/exports/epi-v1
 
+      - name: Configurar caminho do dataset para CI
+        run: |
+          sed -i "s|^path:.*|path: $GITHUB_WORKSPACE/dataset/exports/epi-v1|" \
+            dataset/exports/epi-v1/data.yaml
+
+          sed -i "s|^train:.*|train: train/images|" \
+            dataset/exports/epi-v1/data.yaml
+
+          sed -i "s|^val:.*|val: valid/images|" \
+            dataset/exports/epi-v1/data.yaml
+
+          sed -i "s|^test:.*|test: test/images|" \
+            dataset/exports/epi-v1/data.yaml
+
+          echo "=== DATASET CONFIGURADO ==="
+          cat dataset/exports/epi-v1/data.yaml
+
+          echo "=== VALID IMAGES ==="
+          ls dataset/exports/epi-v1/valid/images | head
+
+
       - name: Executar quality gate com dataset customizado
         run: |
           python scripts/validate_model.py \
